@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>URC — Athlete Management</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#111;--surface:#1a1a1a;--surface2:#222;--border:#333;
+  --gold:#E8A020;--gold-dim:#a06c12;--gold-bg:rgba(232,160,32,0.08);
+  --text:#E8A020;--text2:#c07818;--text3:#806010;
+  --danger:#e05050;--danger-bg:#2a1010;
+  --success:#50c050;--success-bg:#0a2a0a;
+  --radius:8px;--sw:230px;
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex}
+#login-screen{position:fixed;inset:0;background:#0a0a0a;display:flex;align-items:center;justify-content:center;z-index:999}
+.login-box{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:40px;width:340px;text-align:center}
+.login-logo{font-size:30px;font-weight:900;color:var(--gold);letter-spacing:3px;margin-bottom:4px}
+.login-sub{font-size:12px;color:var(--text3);margin-bottom:28px}
+.role-btns{display:flex;gap:8px;margin-bottom:20px}
+.role-btn{flex:1;padding:10px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface2);color:var(--text2);font-size:12px;cursor:pointer;transition:.15s}
+.role-btn.active,.role-btn:hover{border-color:var(--gold);background:var(--gold-bg);color:var(--gold)}
+.login-input{width:100%;padding:10px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);color:var(--gold);font-size:13px;margin-bottom:12px;outline:none}
+.login-input:focus{border-color:var(--gold)}
+.btn-login{width:100%;padding:11px;background:var(--gold);border:none;border-radius:var(--radius);font-weight:700;font-size:14px;color:#000;cursor:pointer}
+.sidebar{width:var(--sw);background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;height:100vh;z-index:100}
+.sl-logo{padding:18px 16px;border-bottom:1px solid var(--border)}
+.sl-logo-text{font-size:20px;font-weight:900;color:var(--gold);letter-spacing:2px}
+.sl-logo-sub{font-size:10px;color:var(--text3)}
+.nav{flex:1;overflow-y:auto;padding:10px 0}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 16px;cursor:pointer;font-size:13px;color:var(--text2);transition:.15s}
+.nav-item:hover{background:var(--gold-bg);color:var(--gold)}
+.nav-item.active{background:var(--gold-bg);color:var(--gold);border-right:3px solid var(--gold)}
+.nav-item i{width:16px;text-align:center}
+.nav-badge{margin-left:auto;background:var(--gold);color:#000;font-size:10px;font-weight:700;border-radius:9px;padding:1px 6px}
+.sl-user{padding:14px 16px;border-top:1px solid var(--border);display:flex;align-items:center;gap:8px}
+.sl-user-name{font-size:12px;color:var(--text)}
+.sl-user-role{font-size:10px;color:var(--text3)}
+.sl-logout{margin-left:auto;cursor:pointer;color:var(--text3);font-size:12px}
+.main{margin-left:var(--sw);flex:1;display:flex;flex-direction:column}
+.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:14px 24px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:50}
+.topbar-title{font-size:16px;font-weight:700;color:var(--gold)}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:10px}
+.content{padding:24px;flex:1}
+.btn{padding:8px 14px;border-radius:var(--radius);font-size:13px;font-weight:600;cursor:pointer;border:none;display:inline-flex;align-items:center;gap:6px;transition:.15s}
+.btn-primary{background:var(--gold);color:#000}.btn-primary:hover{background:#f0b030}
+.btn-secondary{background:var(--surface2);color:var(--text);border:1px solid var(--border)}.btn-secondary:hover{border-color:var(--gold);color:var(--gold)}
+.btn-sm{padding:5px 10px;font-size:12px}
+.att-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;gap:12px;flex-wrap:wrap}
+.att-nav{display:flex;align-items:center;gap:8px}
+.att-nav button{background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--gold);padding:5px 10px;cursor:pointer;font-size:14px}
+.att-nav button:hover:not([disabled]){border-color:var(--gold)}
+.att-nav button[disabled]{opacity:.4;cursor:default}
+.att-range{font-size:13px;color:var(--text2);min-width:200px;text-align:center}
+.grid-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface)}
+.att-table{border-collapse:collapse;min-width:100%}
+.att-table th,.att-table td{border:1px solid var(--border);padding:0}
+.att-table th{background:var(--surface2);color:var(--gold);font-size:11px;font-weight:700;padding:8px 10px;white-space:nowrap;text-align:center}
+.att-table th.sticky,.att-table td.sticky{position:sticky;left:0;z-index:2}
+.att-table th.sticky{background:var(--surface2)}
+.att-table td.sticky{background:var(--surface);padding:8px 12px;font-size:13px;color:var(--text);white-space:nowrap}
+.att-table td.cell{width:68px;min-width:68px;text-align:center;vertical-align:middle;cursor:pointer;transition:.12s}
+.att-table td.cell:hover{background:var(--gold-bg)}
+.dot{width:26px;height:26px;border-radius:50%;border:2px solid #444;display:inline-flex;align-items:center;justify-content:center;font-size:12px;transition:.12s;cursor:pointer}
+.dot.present{background:var(--success-bg);border-color:var(--success);color:var(--success)}
+.dot.absent{background:var(--danger-bg);border-color:var(--danger);color:var(--danger)}
+.dot.none{background:transparent}
+.rate-cell{padding:6px 10px;font-size:12px;font-weight:700;text-align:center;white-space:nowrap}
+.today-col{background:var(--gold-bg)!important;border-bottom:2px solid var(--gold)!important}
+.roster-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
+.athlete-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;cursor:pointer;transition:.15s}
+.athlete-card:hover{border-color:var(--gold);background:var(--gold-bg)}
+.athlete-av{width:42px;height:42px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center;font-size:15px;margin-bottom:10px;color:#000;font-weight:700}
+.athlete-name{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:2px}
+.athlete-meta{font-size:11px;color:var(--text3)}
+.badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;margin-top:6px}
+.badge-active{background:var(--success-bg);color:var(--success)}
+.badge-injured{background:#2a1a00;color:#f59e0b}
+.badge-inactive{background:var(--surface2);color:var(--text3)}
+.search-wrap{position:relative;display:flex;align-items:center}
+.search-wrap i{position:absolute;left:10px;color:var(--text3);font-size:12px}
+.search{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:7px 10px 7px 30px;color:var(--gold);font-size:12px;outline:none;width:180px}
+.search:focus{border-color:var(--gold)}
+.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.7);display:none;align-items:center;justify-content:center;z-index:300}
+.modal-box{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:24px;width:380px;max-width:95vw}
+.modal-title{font-size:15px;font-weight:700;color:var(--gold);margin-bottom:16px}
+.form-row{margin-bottom:12px}
+.form-label{font-size:11px;color:var(--text2);margin-bottom:4px;display:block}
+.form-input,.form-select{width:100%;padding:8px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);color:var(--gold);font-size:13px;outline:none}
+.form-input:focus,.form-select:focus{border-color:var(--gold)}
+.form-select option{background:var(--surface)}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:18px}
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px}
+.stat-sport{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}
+.stat-name{font-size:13px;font-weight:700;color:var(--gold);margin-bottom:10px}
+.stat-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.stat-label{font-size:11px;color:var(--text2)}
+.stat-val{font-size:12px;font-weight:700;color:var(--gold)}
+.bar-bg{background:var(--surface2);border-radius:4px;height:5px;flex:1;margin:0 8px}
+.bar-fill{background:var(--gold);height:5px;border-radius:4px}
+.event-item{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px 16px;display:flex;align-items:center;gap:14px;margin-bottom:10px}
+.edb{background:var(--gold-bg);border:1px solid var(--gold-dim);border-radius:6px;padding:6px 10px;text-align:center;min-width:48px}
+.edb .eday{font-size:18px;font-weight:800;color:var(--gold);line-height:1}
+.edb .emon{font-size:10px;color:var(--text2);text-transform:uppercase}
+.event-info{flex:1}
+.event-name{font-size:14px;font-weight:700;color:var(--gold)}
+.event-meta{font-size:11px;color:var(--text3);margin-top:2px}
+.event-tag{background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:2px 8px;font-size:10px;color:var(--text2)}
+.rem-item{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px 16px;display:flex;align-items:flex-start;gap:12px;margin-bottom:10px}
+.rem-dot{width:8px;height:8px;border-radius:50%;background:var(--gold);margin-top:5px;flex-shrink:0}
+.rem-title{font-size:13px;font-weight:700;color:var(--gold)}
+.rem-sub{font-size:11px;color:var(--text3);margin-top:2px}
+.rem-actions{display:flex;gap:6px;margin-top:8px}
+.sport-tag{display:inline-flex;align-items:center;gap:6px;background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:4px 10px;font-size:12px;color:var(--text);margin:4px}
+.sport-tag .rm{cursor:pointer;color:var(--text3)}.sport-tag .rm:hover{color:var(--danger)}
+.settings-h3{font-size:13px;font-weight:700;color:var(--gold);margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border)}
+.empty{text-align:center;padding:40px;color:var(--text3);font-size:13px}
+.empty i{font-size:28px;margin-bottom:10px;display:block}
+.sun-summary{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap}
+.sun-sum-card{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:8px 12px;font-size:11px}
+</style>
+</head>
+<body>
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">URC</div>
+    <div class="login-sub">Unity Recreation Center &mdash; Athlete Management</div>
+    <div style="font-size:12px;color:var(--text2);text-align:left;margin-bottom:8px">Sign in as</div>
+    <div class="role-btns">
+      <button class="role-btn active" onclick="selectRole('coach',this)">Coach</button>
+      <button class="role-btn" onclick="selectRole('parent',this)">Parent</button>
+      <button class="role-btn" onclick="selectRole('player',this)">Player</button>
+    </div>
+    <input class="login-input" id="login-name" placeholder="Your name" value="Coach Davis"/>
+    <button class="btn-login" onclick="doLogin()">Enter</button>
+  </div>
+</div>
+
+<div class="sidebar" id="sidebar" style="display:none">
+  <div class="sl-logo"><div class="sl-logo-text">URC</div><div class="sl-logo-sub">Athlete Management</div></div>
+  <nav class="nav" id="nav"></nav>
+  <div class="sl-user">
+    <div><div class="sl-user-name" id="sl-uname"></div><div class="sl-user-role" id="sl-urole"></div></div>
+    <div class="sl-logout" onclick="doLogout()" title="Sign out"><i class="fa-solid fa-right-from-bracket"></i></div>
+  </div>
+</div>
+
+<div class="main" id="main" style="display:none">
+  <div class="topbar"><div class="topbar-title" id="page-title"></div><div class="topbar-right" id="topbar-right"></div></div>
+  <div class="content" id="content"></div>
+</div>
+
+<div class="modal-backdrop" id="modal-athlete" onclick="if(event.target===this)this.style.display='none'">
+  <div class="modal-box">
+    <div class="modal-title">Add Athlete</div>
+    <div class="form-row"><label class="form-label">First Name</label><input class="form-input" id="f-first" placeholder="First"/></div>
+    <div class="form-row"><label class="form-label">Last Name</label><input class="form-input" id="f-last" placeholder="Last"/></div>
+    <div class="form-row"><label class="form-label">Sport</label><select class="form-select" id="f-sport"></select></div>
+    <div class="form-row"><label class="form-label">Age</label><input class="form-input" id="f-age" type="number" placeholder="16"/></div>
+    <div class="form-row"><label class="form-label">Status</label>
+      <select class="form-select" id="f-status"><option value="active">Active</option><option value="injured">Injured</option><option value="inactive">Inactive</option></select></div>
+    <div class="modal-actions"><button class="btn btn-secondary" onclick="document.getElementById('modal-athlete').style.display='none'">Cancel</button><button class="btn btn-primary" onclick="addAthlete()">Add</button></div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="modal-event" onclick="if(event.target===this)this.style.display='none'">
+  <div class="modal-box">
+    <div class="modal-title">Add Event</div>
+    <div class="form-row"><label class="form-label">Event Name</label><input class="form-input" id="e-name" placeholder="Practice / Game…"/></div>
+    <div class="form-row"><label class="form-label">Sport</label><select class="form-select" id="e-sport"></select></div>
+    <div class="form-row"><label class="form-label">Date</label><input class="form-input" id="e-date" type="date"/></div>
+    <div class="form-row"><label class="form-label">Time</label><input class="form-input" id="e-time" type="time" value="09:00"/></div>
+    <div class="form-row"><label class="form-label">Location</label><input class="form-input" id="e-loc" placeholder="Field 3…"/></div>
+    <div class="modal-actions"><button class="btn btn-secondary" onclick="document.getElementById('modal-event').style.display='none'">Cancel</button><button class="btn btn-primary" onclick="addEvent()">Add</button></div>
+  </div>
+</div>
+
+<script>
+var role='coach',userName='Coach Davis',currentPage='sunday-att';
+var sports=['Basketball','Soccer','Swimming','Track & Field','Volleyball'];
+var athletes=[
+  {id:1,first:'Marcus',last:'Williams',sport:'Basketball',age:17,status:'active',av:'MW'},
+  {id:2,first:'Aisha',last:'Johnson',sport:'Track & Field',age:16,status:'active',av:'AJ'},
+  {id:3,first:'Tyler',last:'Chen',sport:'Soccer',age:15,status:'injured',av:'TC'},
+  {id:4,first:'Sofia',last:'Martinez',sport:'Swimming',age:18,status:'active',av:'SM'},
+  {id:5,first:'Darius',last:'Brown',sport:'Basketball',age:16,status:'active',av:'DB'},
+  {id:6,first:'Emma',last:'Davis',sport:'Volleyball',age:17,status:'inactive',av:'ED'},
+  {id:7,first:'Jamal',last:'Thompson',sport:'Soccer',age:15,status:'active',av:'JT'},
+  {id:8,first:'Lily',last:'Park',sport:'Swimming',age:16,status:'active',av:'LP'},
+];
+var nextId=100;
+var sundayAtt={};  // key: "aid_YYYY-MM-DD" => 'present'|'absent'|'none'
+var sundayOffset=0; // weeks offset from current Sunday
+var VISIBLE=10;
+var weeklyAtt={};
+var weekOffset=0;
+var events=[
+  {id:1,name:'Basketball Practice',sport:'Basketball',date:'2026-06-29',time:'10:00',loc:'Gym A'},
+  {id:2,name:'Swim Meet',sport:'Swimming',date:'2026-07-06',time:'08:00',loc:'Aquatic Center'},
+  {id:3,name:'Soccer Scrimmage',sport:'Soccer',date:'2026-07-13',time:'14:00',loc:'Field 2'},
+];
+var nextEid=50;
+var performance=[
+  {id:1,athleteId:1,sport:'Basketball',stats:{Points:18.4,Assists:4.2,Rebounds:6.1}},
+  {id:2,athleteId:2,sport:'Track & Field',stats:{'100m (s)':12.3,'200m (s)':25.1,'Long Jump (m)':4.8}},
+  {id:3,athleteId:4,sport:'Swimming',stats:{'50m Free (s)':28.4,'100m Free (s)':61.2,'Butterfly (s)':35.1}},
+];
+var reminders=[
+  {id:1,title:'Marcus Williams',sub:'Missed 2 consecutive Sundays',done:false},
+  {id:2,title:'Tyler Chen',sub:'Injury check-in overdue',done:false},
+];
+
+// TODAY for the app
+var APP_TODAY = new Date('2026-06-28T12:00:00');
+
+function getThisSunday(){
+  var d=new Date(APP_TODAY);
+  var day=d.getDay(); // 0=Sun
+  d.setDate(d.getDate()-day);
+  d.setHours(0,0,0,0);
+  return d;
+}
+function dateKey(d){ return d.toISOString().slice(0,10); }
+function fmtSun(d){ return d.toLocaleDateString('en-US',{month:'short',day:'numeric'}); }
+
+function getSundays(){
+  // Anchor = thisSunday + sundayOffset weeks
+  // Show VISIBLE sundays ending at anchor
+  var anchor=new Date(getThisSunday());
+  anchor.setDate(anchor.getDate()+sundayOffset*7);
+  var arr=[];
+  for(var i=VISIBLE-1;i>=0;i--){
+    var d=new Date(anchor);
+    d.setDate(d.getDate()-i*7);
+    arr.push(d);
+  }
+  return arr;
+}
+function isCurrentSunday(d){ return dateKey(d)===dateKey(getThisSunday()); }
+
+// ── Login
+function selectRole(r,btn){
+  role=r;
+  document.querySelectorAll('.role-btn').forEach(function(b){b.classList.remove('active');});
+  btn.classList.add('active');
+  var names={coach:'Coach Davis',parent:'Jordan (Parent)',player:'Marcus Williams'};
+  document.getElementById('login-name').value=names[r];
+}
+function doLogin(){
+  userName=document.getElementById('login-name').value||'User';
+  document.getElementById('login-screen').style.display='none';
+  document.getElementById('sidebar').style.display='flex';
+  document.getElementById('main').style.display='flex';
+  buildNav();
+  navigate('sunday-att');
+}
+function doLogout(){
+  document.getElementById('login-screen').style.display='flex';
+  document.getElementById('sidebar').style.display='none';
+  document.getElementById('main').style.display='none';
+}
+
+// ── Nav
+var navDefs={
+  coach:[
+    {id:'sunday-att',icon:'fa-calendar-check',label:'Sunday Attendance'},
+    {id:'attendance',icon:'fa-clipboard-check',label:'Weekly Attendance'},
+    {id:'roster',icon:'fa-users',label:'Roster'},
+    {id:'performance',icon:'fa-chart-line',label:'Performance'},
+    {id:'schedule',icon:'fa-calendar',label:'Schedule'},
+    {id:'reminders',icon:'fa-bell',label:'Reminders',badge:true},
+    {id:'settings',icon:'fa-gear',label:'Settings'},
+  ],
+  parent:[
+    {id:'sunday-att',icon:'fa-calendar-check',label:'Sunday Attendance'},
+    {id:'roster',icon:'fa-users',label:'Roster'},
+    {id:'schedule',icon:'fa-calendar',label:'Schedule'},
+    {id:'reminders',icon:'fa-bell',label:'Reminders',badge:true},
+  ],
+  player:[
+    {id:'sunday-att',icon:'fa-calendar-check',label:'Sunday Attendance'},
+    {id:'my-stats',icon:'fa-chart-bar',label:'My Stats'},
+    {id:'schedule',icon:'fa-calendar',label:'Schedule'},
+  ]
+};
+function buildNav(){
+  var nav=document.getElementById('nav');
+  nav.innerHTML='';
+  (navDefs[role]||[]).forEach(function(n){
+    var div=document.createElement('div');
+    div.className='nav-item';div.id='nav-'+n.id;
+    div.innerHTML='<i class="fa-solid '+n.icon+'"></i>'+n.label+(n.badge?'<span class="nav-badge" id="badge-rem">0</span>':'');
+    div.onclick=function(){navigate(n.id);};
+    nav.appendChild(div);
+  });
+  document.getElementById('sl-uname').textContent=userName;
+  document.getElementById('sl-urole').textContent=role.charAt(0).toUpperCase()+role.slice(1);
+  updateBadge();
+}
+function navigate(id){
+  currentPage=id;
+  document.querySelectorAll('.nav-item').forEach(function(n){n.classList.remove('active');});
+  var ni=document.getElementById('nav-'+id);if(ni)ni.classList.add('active');
+  var titles={'sunday-att':'Sunday Attendance',attendance:'Weekly Attendance',roster:'Roster',performance:'Performance',schedule:'Schedule',reminders:'Reminders',settings:'Settings','my-stats':'My Stats'};
+  document.getElementById('page-title').textContent=titles[id]||id;
+  render();
+}
+function render(){
+  var tr=document.getElementById('topbar-right');tr.innerHTML='';
+  if(currentPage==='sunday-att') renderSundayAtt();
+  else if(currentPage==='attendance') renderWeekly();
+  else if(currentPage==='roster'){
+    if(role==='coach') tr.innerHTML='<div class="search-wrap"><i class="fa-solid fa-magnifying-glass"></i><input class="search" id="search-input" placeholder="Search\u2026" oninput="filterRoster()"/></div><button class="btn btn-primary btn-sm" onclick="openAthleteModal()"><i class="fa-solid fa-plus"></i>Add Athlete</button>';
+    renderRoster();
+  }
+  else if(currentPage==='performance') renderPerformance();
+  else if(currentPage==='schedule'){
+    if(role==='coach') tr.innerHTML='<button class="btn btn-primary btn-sm" onclick="openEventModal()"><i class="fa-solid fa-plus"></i>Add Event</button>';
+    renderSchedule();
+  }
+  else if(currentPage==='reminders') renderReminders();
+  else if(currentPage==='settings') renderSettings();
+  else if(currentPage==='my-stats') renderMyStats();
+  updateBadge();
+}
+
+// ── Sunday Attendance Grid
+function renderSundayAtt(){
+  var sundays=getSundays();
+  var rangeLabel=fmtSun(sundays[0])+' \u2013 '+fmtSun(sundays[sundays.length-1]);
+  var canGoForward=(sundayOffset<0);
+
+  var thead='<tr><th class="sticky">Athlete</th>';
+  sundays.forEach(function(s){
+    var cls=isCurrentSunday(s)?'today-col':'';
+    thead+='<th class="'+cls+'">'+fmtSun(s)+'<br><span style="font-size:9px;color:var(--text3);font-weight:400">Sun</span></th>';
+  });
+  thead+='<th>Rate</th></tr>';
+
+  var visibleAthletes=role==='player'
+    ? athletes.slice(0,1)  // just show Marcus for demo
+    : athletes;
+
+  var tbody='';
+  visibleAthletes.forEach(function(a){
+    var present=0,marked=0;
+    tbody+='<tr><td class="sticky"><span style="font-weight:600">'+a.first+' '+a.last+'</span><br><span style="font-size:10px;color:var(--text3)">'+a.sport+'</span></td>';
+    sundays.forEach(function(s){
+      var k=a.id+'_'+dateKey(s);
+      var v=sundayAtt[k]||'none';
+      if(v==='present'){present++;marked++;}else if(v==='absent')marked++;
+      var icon=v==='present'?'\u2713':v==='absent'?'\u2717':'';
+      tbody+='<td class="cell" onclick="toggleSun('+a.id+',\''+dateKey(s)+'\')"><div class="dot '+v+'">'+icon+'</div></td>';
+    });
+    var rate=marked>0?Math.round(present/marked*100):null;
+    var col=rate===null?'var(--text3)':rate>=80?'var(--success)':rate>=60?'#f59e0b':'var(--danger)';
+    tbody+='<td class="rate-cell" style="color:'+col+'">'+(rate===null?'\u2014':rate+'%')+'</td></tr>';
+  });
+
+  // Per-Sunday summary cards
+  var summary='<div class="sun-summary">';
+  sundays.forEach(function(s){
+    var p=athletes.filter(function(a){return sundayAtt[a.id+'_'+dateKey(s)]==='present';}).length;
+    var ab=athletes.filter(function(a){return sundayAtt[a.id+'_'+dateKey(s)]==='absent';}).length;
+    var tot=p+ab;
+    summary+='<div class="sun-sum-card"><div style="color:var(--gold);font-weight:700;margin-bottom:3px">'+fmtSun(s)+'</div>';
+    if(tot===0) summary+='<div style="color:var(--text3)">Not marked</div>';
+    else summary+='<div style="color:var(--success)">'+p+' present</div><div style="color:var(--danger)">'+ab+' absent</div>';
+    summary+='</div>';
+  });
+  summary+='</div>';
+
+  document.getElementById('content').innerHTML=
+    '<div class="att-header">'+
+      '<div><div style="font-size:14px;font-weight:700;color:var(--gold)">Sunday Attendance</div>'+
+      '<div style="font-size:11px;color:var(--text3);margin-top:2px">One column per Sunday &bull; click a circle to mark</div></div>'+
+      '<div class="att-nav">'+
+        '<button onclick="sundayOffset--;render()" title="Earlier Sundays"><i class="fa-solid fa-chevron-left"></i></button>'+
+        '<div class="att-range">'+rangeLabel+'</div>'+
+        '<button onclick="sundayOffset++;render()" title="Later Sundays"'+(canGoForward?'':' disabled')+'>'+
+          '<i class="fa-solid fa-chevron-right"></i></button>'+
+      '</div>'+
+    '</div>'+
+    '<div class="grid-wrap"><table class="att-table"><thead>'+thead+'</thead><tbody>'+tbody+'</tbody></table></div>'+
+    summary;
+}
+function toggleSun(aid,ds){
+  var k=aid+'_'+ds;
+  var cur=sundayAtt[k]||'none';
+  sundayAtt[k]=cur==='none'?'present':cur==='present'?'absent':'none';
+  renderSundayAtt();
+}
+
+// ── Weekly Attendance
+function getWeekDates(){
+  var today=new Date(APP_TODAY);
+  var day=today.getDay();
+  var mon=new Date(today);
+  mon.setDate(today.getDate()-day+1+weekOffset*7);
+  var arr=[];
+  for(var i=0;i<5;i++){var d=new Date(mon);d.setDate(mon.getDate()+i);arr.push(d);}
+  return arr;
+}
+function renderWeekly(){
+  var days=getWeekDates();
+  var label=days[0].toLocaleDateString('en-US',{month:'short',day:'numeric'})+' \u2013 '+days[4].toLocaleDateString('en-US',{month:'short',day:'numeric'});
+  var thead='<tr><th class="sticky">Athlete</th>';
+  days.forEach(function(d){thead+='<th>'+d.toLocaleDateString('en-US',{weekday:'short'})+'<br><span style="font-size:9px;font-weight:400;color:var(--text3)">'+d.toLocaleDateString('en-US',{month:'numeric',day:'numeric'})+'</span></th>';});
+  thead+='<th>Rate</th></tr>';
+  var tbody='';
+  athletes.forEach(function(a){
+    var p=0,m=0;
+    tbody+='<tr><td class="sticky"><span style="font-weight:600">'+a.first+' '+a.last+'</span><br><span style="font-size:10px;color:var(--text3)">'+a.sport+'</span></td>';
+    days.forEach(function(d){
+      var k='w_'+a.id+'_'+dateKey(d);
+      var v=weeklyAtt[k]||'none';
+      if(v==='present'){p++;m++;}else if(v==='absent')m++;
+      tbody+='<td class="cell" onclick="toggleWeekly('+a.id+',\''+dateKey(d)+'\')"><div class="dot '+v+'">'+(v==='present'?'\u2713':v==='absent'?'\u2717':'')+'</div></td>';
+    });
+    var rate=m>0?Math.round(p/m*100):null;
+    var col=rate===null?'var(--text3)':rate>=80?'var(--success)':rate>=60?'#f59e0b':'var(--danger)';
+    tbody+='<td class="rate-cell" style="color:'+col+'">'+(rate===null?'\u2014':rate+'%')+'</td></tr>';
+  });
+  document.getElementById('content').innerHTML=
+    '<div class="att-header"><div style="font-size:14px;font-weight:700;color:var(--gold)">Weekly Attendance</div>'+
+    '<div class="att-nav"><button onclick="weekOffset--;render()"><i class="fa-solid fa-chevron-left"></i></button>'+
+    '<div class="att-range">'+label+'</div>'+
+    '<button onclick="weekOffset++;render()"><i class="fa-solid fa-chevron-right"></i></button></div></div>'+
+    '<div class="grid-wrap"><table class="att-table"><thead>'+thead+'</thead><tbody>'+tbody+'</tbody></table></div>';
+}
+function toggleWeekly(aid,ds){
+  var k='w_'+aid+'_'+ds;var cur=weeklyAtt[k]||'none';
+  weeklyAtt[k]=cur==='none'?'present':cur==='present'?'absent':'none';
+  renderWeekly();
+}
+
+// ── Roster
+function renderRoster(filter){
+  filter=filter||'';
+  var list=athletes.filter(function(a){return (a.first+' '+a.last+' '+a.sport).toLowerCase().indexOf(filter.toLowerCase())>=0;});
+  document.getElementById('content').innerHTML=list.length===0
+    ?'<div class="empty"><i class="fa-solid fa-users-slash"></i>No athletes found</div>'
+    :'<div class="roster-grid">'+list.map(function(a){
+      return '<div class="athlete-card" onclick="alert(\''+a.first+' '+a.last+' \u2014 '+a.sport+', Age '+a.age+'\')"><div class="athlete-av">'+a.av+'</div><div class="athlete-name">'+a.first+' '+a.last+'</div><div class="athlete-meta">'+a.sport+' \u00b7 Age '+a.age+'</div><span class="badge badge-'+a.status+'">'+a.status+'</span></div>';
+    }).join('')+'</div>';
+}
+function filterRoster(){renderRoster(document.getElementById('search-input')?document.getElementById('search-input').value:'');}
+function openAthleteModal(){
+  document.getElementById('f-sport').innerHTML=sports.map(function(s){return '<option>'+s+'</option>';}).join('');
+  document.getElementById('modal-athlete').style.display='flex';
+}
+function addAthlete(){
+  var first=document.getElementById('f-first').value.trim();
+  var last=document.getElementById('f-last').value.trim();
+  if(!first||!last)return;
+  athletes.push({id:nextId++,first:first,last:last,sport:document.getElementById('f-sport').value,age:parseInt(document.getElementById('f-age').value)||16,status:document.getElementById('f-status').value,av:(first[0]+last[0]).toUpperCase()});
+  document.getElementById('modal-athlete').style.display='none';
+  ['f-first','f-last','f-age'].forEach(function(id){document.getElementById(id).value='';});
+  renderRoster();
+}
+
+// ── Performance
+function renderPerformance(){
+  var maxes={Points:30,Assists:10,Rebounds:15,'100m (s)':15,'200m (s)':30,'Long Jump (m)':7,'50m Free (s)':35,'100m Free (s)':75,'Butterfly (s)':45};
+  document.getElementById('content').innerHTML='<div class="stat-grid">'+performance.map(function(p){
+    var a=athletes.find(function(x){return x.id===p.athleteId;})||{first:'?',last:''};
+    return '<div class="stat-card"><div class="stat-sport">'+p.sport+'</div><div class="stat-name">'+a.first+' '+a.last+'</div>'+
+      Object.entries(p.stats).map(function(entry){
+        var k=entry[0],v=entry[1];
+        var pct=Math.min(100,Math.round(v/(maxes[k]||v)*100));
+        return '<div class="stat-row"><span class="stat-label">'+k+'</span><div class="bar-bg"><div class="bar-fill" style="width:'+pct+'%"></div></div><span class="stat-val">'+v+'</span></div>';
+      }).join('')+'</div>';
+  }).join('')+'</div>';
+}
+
+// ── Schedule
+function renderSchedule(){
+  var sorted=events.slice().sort(function(a,b){return a.date.localeCompare(b.date);});
+  document.getElementById('content').innerHTML=sorted.map(function(e){
+    var d=new Date(e.date+'T12:00:00');
+    return '<div class="event-item"><div class="edb"><div class="eday">'+d.getDate()+'</div><div class="emon">'+d.toLocaleDateString('en-US',{month:'short'})+'</div></div><div class="event-info"><div class="event-name">'+e.name+'</div><div class="event-meta">'+e.time+' \u00b7 '+e.loc+'</div></div><div class="event-tag">'+e.sport+'</div></div>';
+  }).join('');
+}
+function openEventModal(){
+  document.getElementById('e-sport').innerHTML=sports.map(function(s){return '<option>'+s+'</option>';}).join('');
+  document.getElementById('modal-event').style.display='flex';
+}
+function addEvent(){
+  var name=document.getElementById('e-name').value.trim();if(!name)return;
+  events.push({id:nextEid++,name:name,sport:document.getElementById('e-sport').value,date:document.getElementById('e-date').value,time:document.getElementById('e-time').value,loc:document.getElementById('e-loc').value||'TBD'});
+  document.getElementById('modal-event').style.display='none';
+  renderSchedule();
+}
+
+// ── Reminders
+function getMissCount(){return reminders.filter(function(r){return !r.done;}).length;}
+function updateBadge(){var b=document.getElementById('badge-rem');if(b)b.textContent=getMissCount();}
+function renderReminders(){
+  document.getElementById('content').innerHTML=reminders.length===0
+    ?'<div class="empty"><i class="fa-solid fa-bell-slash"></i>No reminders</div>'
+    :reminders.map(function(r){
+      return '<div class="rem-item"><div class="rem-dot" style="'+(r.done?'background:var(--text3)':'')+'"></div><div style="flex:1"><div class="rem-title" style="'+(r.done?'text-decoration:line-through;opacity:.5':'')+'">'+r.title+'</div><div class="rem-sub">'+r.sub+'</div><div class="rem-actions">'+(r.done?'':`<button class="btn btn-sm btn-primary" onclick="doneRem(${r.id})">Mark done</button>`)+'<button class="btn btn-sm btn-secondary" onclick="deleteRem('+r.id+')">Dismiss</button></div></div></div>';
+    }).join('');
+}
+function doneRem(id){var r=reminders.find(function(x){return x.id===id;});if(r)r.done=true;renderReminders();updateBadge();}
+function deleteRem(id){reminders=reminders.filter(function(x){return x.id!==id;});renderReminders();updateBadge();}
+
+// ── Settings
+function renderSettings(){
+  document.getElementById('content').innerHTML='<div><div class="settings-h3">Sports</div><div id="sports-list">'+sports.map(function(s){return '<span class="sport-tag">'+s+'<i class="fa-solid fa-xmark rm" onclick="removeSport(\''+s+'\')"></i></span>';}).join('')+'</div><div style="display:flex;gap:8px;margin-top:10px"><input class="form-input" id="new-sport" placeholder="New sport name" style="max-width:220px"/><button class="btn btn-primary btn-sm" onclick="addSport()">Add</button></div></div>';
+}
+function addSport(){var v=document.getElementById('new-sport').value.trim();if(v&&sports.indexOf(v)<0){sports.push(v);renderSettings();}}
+function removeSport(s){sports=sports.filter(function(x){return x!==s;});renderSettings();}
+
+// ── My Stats
+function renderMyStats(){
+  var a=athletes[0];
+  var p=performance.find(function(x){return x.athleteId===a.id;});
+  document.getElementById('content').innerHTML='<div style="display:flex;align-items:center;gap:14px;margin-bottom:20px"><div style="width:56px;height:56px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;color:#000">'+a.av+'</div><div><div style="font-size:18px;font-weight:800;color:var(--gold)">'+a.first+' '+a.last+'</div><div style="font-size:12px;color:var(--text3)">'+a.sport+' \u00b7 Age '+a.age+'</div></div></div>'+(p?'<div class="stat-card">'+Object.entries(p.stats).map(function(e){return '<div class="stat-row"><span class="stat-label">'+e[0]+'</span><span class="stat-val">'+e[1]+'</span></div>';}).join('')+'</div>':'<div class="empty">No stats yet</div>');
+}
+</script>
+</body>
+</html>
